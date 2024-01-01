@@ -2,7 +2,10 @@ module github.com/StollD/proton-drive
 
 go 1.21.5
 
-require github.com/henrybear327/go-proton-api v1.0.0
+require (
+	github.com/ProtonMail/gopenpgp/v2 v2.7.2
+	github.com/henrybear327/go-proton-api v1.0.0
+)
 
 require (
 	github.com/ProtonMail/bcrypt v0.0.0-20211005172633-e235017c1baf // indirect
@@ -10,7 +13,6 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230717121422-5aa5874ade95 // indirect
 	github.com/ProtonMail/go-mime v0.0.0-20230322103455-7d82a3887f2f // indirect
 	github.com/ProtonMail/go-srp v0.0.7 // indirect
-	github.com/ProtonMail/gopenpgp/v2 v2.7.2 // indirect
 	github.com/PuerkitoBio/goquery v1.8.1 // indirect
 	github.com/andybalholm/cascadia v1.3.2 // indirect
 	github.com/bradenaw/juniper v0.13.1 // indirect
