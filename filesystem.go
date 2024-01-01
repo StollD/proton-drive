@@ -49,3 +49,57 @@ func (self *FileSystem) Download(ctx context.Context, link *Link) (*FileReader, 
 		blocks: revision.Blocks,
 	}, nil
 }
+
+func (self *FileSystem) Move(ctx context.Context, link *Link, parent *Link, name string) error {
+	self.events.TriggerUpdate()
+
+	// Make sure the links are up-to-date
+	link = self.links.LinkFromID(link.ID())
+	parent = self.links.LinkFromID(parent.ID())
+
+	if link == nil || parent == nil {
+		return ErrInvalidLink
+	}
+
+	share := link.Share()
+	address := share.Address()
+	srcParent := link.Parent()
+
+	request := proton.MoveLinkReq{
+		ParentLinkID:     parent.ID(),
+		OriginalHash:     link.Hash(),
+		SignatureAddress: address.Email(),
+	}
+
+	err := request.SetName(name, address.Keyring(), parent.Keyring())
+	if err != nil {
+		return err
+	}
+
+	err = request.SetHash(name, parent.HashKey())
+	if err != nil {
+		return err
+	}
+
+	nodePassphrase, err := reencryptKeyPacket(
+		srcParent.Keyring(),
+		parent.Keyring(),
+		address.Keyring(),
+		link.NodePassphrase(),
+	)
+
+	if err != nil {
+		return err
+	}
+
+	request.NodePassphrase = nodePassphrase
+	request.NodePassphraseSignature = link.NodePassphraseSignature()
+
+	err = self.client.MoveLink(ctx, share.ID(), link.ID(), request)
+	if err != nil {
+		return err
+	}
+
+	self.events.TriggerUpdate()
+	return nil
+}
