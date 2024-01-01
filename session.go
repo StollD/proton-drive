@@ -13,6 +13,7 @@ type Session struct {
 	user   *User
 	links  *Links
 	events *EventLoop
+	fs     *FileSystem
 }
 
 func NewSession(application *Application) *Session {
@@ -21,6 +22,7 @@ func NewSession(application *Application) *Session {
 	self.user = &User{client: self.Client(), tokens: self.Tokens()}
 	self.links = &Links{client: self.Client(), user: self.User()}
 	self.events = &EventLoop{client: self.Client(), links: self.Links()}
+	self.fs = &FileSystem{client: self.Client(), user: self.User(), links: self.Links(), events: self.Events()}
 
 	return self
 }
@@ -43,6 +45,10 @@ func (self *Session) Links() *Links {
 
 func (self *Session) Events() *EventLoop {
 	return self.events
+}
+
+func (self *Session) FileSystem() *FileSystem {
+	return self.fs
 }
 
 func (self *Session) Init(ctx context.Context) error {
