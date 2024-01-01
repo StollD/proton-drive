@@ -4,7 +4,11 @@ go 1.21.5
 
 require (
 	github.com/ProtonMail/gopenpgp/v2 v2.7.2
+	github.com/barweiss/go-tuple v1.1.2
+	github.com/deckarep/golang-set/v2 v2.6.0
 	github.com/henrybear327/go-proton-api v1.0.0
+	github.com/relvacode/iso8601 v1.3.0
+	golang.org/x/time v0.5.0
 )
 
 require (
