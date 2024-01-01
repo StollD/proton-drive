@@ -298,3 +298,65 @@ func (self *Links) LinkFromPath(path string) *Link {
 
 	return nil
 }
+
+func (self *Links) OnCreate(event proton.LinkEvent) error {
+	if event.Link.State != proton.LinkStateActive {
+		return nil
+	}
+
+	parent := self.LinkFromID(event.Link.ParentLinkID)
+
+	link, err := self.getLink(event.Link, parent)
+	if err != nil {
+		return err
+	}
+
+	parent.children.Add(link)
+
+	self.linkByID[link.ID()] = link
+	self.linkByPath[link.Path()] = link
+
+	return nil
+}
+
+func (self *Links) OnUpdate(event proton.LinkEvent) error {
+	old := self.LinkFromID(event.Link.LinkID)
+
+	if old == nil && event.Link.State == proton.LinkStateActive {
+		return self.OnCreate(event)
+	} else if event.Link.State != proton.LinkStateActive {
+		self.OnDelete(event)
+		return nil
+	}
+
+	oldParent := old.Parent()
+	newParent := self.LinkFromID(event.Link.ParentLinkID)
+
+	link, err := self.getLink(event.Link, newParent)
+	if err != nil {
+		return err
+	}
+
+	link.children = old.children
+	*old = *link
+
+	oldParent.children.Remove(old)
+	newParent.children.Add(old)
+
+	self.getLinkMaps()
+
+	return nil
+}
+
+func (self *Links) OnDelete(event proton.LinkEvent) {
+	old := self.LinkFromID(event.Link.LinkID)
+
+	if old == nil {
+		return
+	}
+
+	delete(self.linkByID, old.ID())
+	delete(self.linkByPath, old.Path())
+
+	old.Parent().children.Remove(old)
+}

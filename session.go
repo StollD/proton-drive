@@ -10,8 +10,9 @@ type InitHandler func(ctx context.Context) error
 type Session struct {
 	application *Application
 
-	user  *User
-	links *Links
+	user   *User
+	links  *Links
+	events *EventLoop
 }
 
 func NewSession(application *Application) *Session {
@@ -19,6 +20,7 @@ func NewSession(application *Application) *Session {
 
 	self.user = &User{client: self.Client(), tokens: self.Tokens()}
 	self.links = &Links{client: self.Client(), user: self.User()}
+	self.events = &EventLoop{client: self.Client(), links: self.Links()}
 
 	return self
 }
@@ -39,6 +41,10 @@ func (self *Session) Links() *Links {
 	return self.links
 }
 
+func (self *Session) Events() *EventLoop {
+	return self.events
+}
+
 func (self *Session) Init(ctx context.Context) error {
 	err := self.user.Init(ctx)
 	if err != nil {
@@ -46,6 +52,11 @@ func (self *Session) Init(ctx context.Context) error {
 	}
 
 	err = self.links.Init(ctx)
+	if err != nil {
+		return err
+	}
+
+	err = self.events.Init(ctx)
 	if err != nil {
 		return err
 	}
