@@ -103,3 +103,23 @@ func (self *FileSystem) Move(ctx context.Context, link *Link, parent *Link, name
 	self.events.TriggerUpdate()
 	return nil
 }
+
+func (self *FileSystem) Delete(ctx context.Context, link *Link) error {
+	self.events.TriggerUpdate()
+
+	link = self.links.LinkFromID(link.ID())
+	if link == nil {
+		return ErrInvalidLink
+	}
+
+	share := link.Share()
+	parent := link.Parent()
+
+	err := self.client.TrashChildren(ctx, share.ID(), parent.ID(), link.ID())
+	if err != nil {
+		return err
+	}
+
+	self.events.TriggerUpdate()
+	return nil
+}
