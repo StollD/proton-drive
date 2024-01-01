@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"github.com/henrybear327/go-proton-api"
+	pathlib "path"
 )
 
 var (
 	ErrInvalidLink     = errors.New("invalid link")
 	ErrInvalidLinkType = errors.New("invalid link type, expected file")
+	ErrAlreadyExists   = errors.New("file or folder already exists")
 )
 
 type FileSystem struct {
@@ -116,6 +118,63 @@ func (self *FileSystem) Delete(ctx context.Context, link *Link) error {
 	parent := link.Parent()
 
 	err := self.client.TrashChildren(ctx, share.ID(), parent.ID(), link.ID())
+	if err != nil {
+		return err
+	}
+
+	self.events.TriggerUpdate()
+	return nil
+}
+
+func (self *FileSystem) CreateDir(ctx context.Context, parent *Link, name string) error {
+	self.events.TriggerUpdate()
+
+	parent = self.links.LinkFromID(parent.ID())
+	if parent == nil {
+		return ErrInvalidLink
+	}
+
+	if self.links.LinkFromPath(pathlib.Join(parent.Path(), name)) != nil {
+		return ErrAlreadyExists
+	}
+
+	share := parent.Share()
+	address := share.Address()
+
+	nodeKey, nodePassEnc, nodePassSig, err := generateNodeKeys(parent.Keyring(), address.Keyring())
+	if err != nil {
+		return err
+	}
+
+	request := proton.CreateFolderReq{
+		ParentLinkID:            parent.ID(),
+		SignatureAddress:        address.Email(),
+		NodeKey:                 nodeKey,
+		NodePassphrase:          nodePassEnc,
+		NodePassphraseSignature: nodePassSig,
+	}
+
+	err = request.SetName(name, address.Keyring(), parent.Keyring())
+	if err != nil {
+		return err
+	}
+
+	err = request.SetHash(name, parent.HashKey())
+	if err != nil {
+		return err
+	}
+
+	keyring, err := getKeyRing(parent.Keyring(), address.Keyring(), nodeKey, nodePassEnc, nodePassSig)
+	if err != nil {
+		return err
+	}
+
+	err = request.SetNodeHashKey(keyring)
+	if err != nil {
+		return err
+	}
+
+	_, err = self.client.CreateFolder(ctx, share.ID(), request)
 	if err != nil {
 		return err
 	}
