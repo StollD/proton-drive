@@ -3,7 +3,9 @@ package drive
 import (
 	"context"
 	"errors"
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/henrybear327/go-proton-api"
+	"mime"
 	pathlib "path"
 )
 
@@ -50,6 +52,125 @@ func (self *FileSystem) Download(ctx context.Context, link *Link) (*FileReader, 
 		link:   link,
 		blocks: revision.Blocks,
 	}, nil
+}
+
+func (self *FileSystem) Upload(ctx context.Context, parent *Link, name string) (*FileWriter, error) {
+	self.events.TriggerUpdate()
+
+	parent = self.links.LinkFromID(parent.ID())
+	if parent == nil {
+		return nil, ErrInvalidLink
+	}
+
+	link := self.links.LinkFromPath(pathlib.Join(parent.Path(), name))
+	if link == nil {
+		lid, rid, keyring, sessionKey, err := self.createFile(ctx, parent, name)
+		if err != nil {
+			return nil, err
+		}
+
+		return &FileWriter{
+			ctx: ctx,
+
+			client: self.client,
+			events: self.events,
+
+			parent:     parent,
+			linkID:     lid,
+			revisionID: rid,
+
+			newFile: true,
+
+			keyring:    keyring,
+			sessionKey: sessionKey,
+		}, nil
+	} else {
+		rid, err := self.createRevision(ctx, link)
+		if err != nil {
+			return nil, err
+		}
+
+		return &FileWriter{
+			ctx: ctx,
+
+			client: self.client,
+			events: self.events,
+
+			parent:     parent,
+			linkID:     link.ID(),
+			revisionID: rid,
+			newFile:    false,
+
+			keyring:    link.Keyring(),
+			sessionKey: link.SessionKey(),
+		}, nil
+	}
+}
+
+func (self *FileSystem) createFile(
+	ctx context.Context,
+	parent *Link,
+	name string,
+) (string, string, *crypto.KeyRing, *crypto.SessionKey, error) {
+	share := parent.Share()
+	address := share.Address()
+
+	nodeKey, nodePassEnc, nodePassSig, err := generateNodeKeys(parent.Keyring(), address.Keyring())
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	nodeKeyring, err := getKeyRing(parent.Keyring(), address.Keyring(), nodeKey, nodePassEnc, nodePassSig)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	mimeType := mime.TypeByExtension(pathlib.Ext(name))
+	if mimeType == "" {
+		mimeType = "text/plain"
+	}
+
+	request := proton.CreateFileReq{
+		ParentLinkID:            parent.ID(),
+		SignatureAddress:        address.Email(),
+		NodeKey:                 nodeKey,
+		NodePassphrase:          nodePassEnc,
+		NodePassphraseSignature: nodePassSig,
+		MIMEType:                mimeType,
+	}
+
+	sessionKey, err := request.SetContentKeyPacketAndSignature(nodeKeyring)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	err = request.SetName(name, address.Keyring(), parent.Keyring())
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	err = request.SetHash(name, parent.HashKey())
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	rsp, err := self.client.CreateFile(ctx, share.ID(), request)
+	if err != nil {
+		return "", "", nil, nil, err
+	}
+
+	return rsp.ID, rsp.RevisionID, nodeKeyring, sessionKey, nil
+}
+
+func (self *FileSystem) createRevision(ctx context.Context, link *Link) (string, error) {
+	share := link.Share()
+
+	rsp, err := self.client.CreateRevision(ctx, share.ID(), link.ID())
+	if err != nil {
+		return "", err
+	}
+
+	return rsp.ID, nil
 }
 
 func (self *FileSystem) Move(ctx context.Context, link *Link, parent *Link, name string) error {
