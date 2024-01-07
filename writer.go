@@ -199,14 +199,10 @@ func (self *FileWriter) Close() error {
 		SignatureAddress:  address.Email(),
 	}
 
-	if self.contentModTime.IsZero() {
-		self.contentModTime = time.Now()
-	}
-
 	xAttr := proton.RevisionXAttrCommon{
 		Size:             self.contentSize,
 		BlockSizes:       self.blockSizes,
-		ModificationTime: self.contentModTime.Format(ISO8601Layout),
+		ModificationTime: self.ModTime().Format(ISO8601Layout),
 		Digests: map[string]string{
 			"SHA1": self.Hash(),
 		},
@@ -249,6 +245,14 @@ func (self *FileWriter) Size() int64 {
 func (self *FileWriter) Hash() string {
 	self.allocateState()
 	return hex.EncodeToString(self.contentHash.Sum(nil))
+}
+
+func (self *FileWriter) ModTime() time.Time {
+	if self.contentModTime.IsZero() {
+		return time.Now()
+	}
+
+	return self.contentModTime
 }
 
 func (self *FileWriter) SetModTime(modTime time.Time) {
