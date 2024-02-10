@@ -84,21 +84,19 @@ func (self *FileWriter) Write(buffer []byte) (int, error) {
 
 	for i := 0; i < len(buffer); {
 		missing := BlockSize - self.blockSize
-		available := missing
+		available := len(buffer) - i
 
-		if available > len(buffer) {
-			available = len(buffer)
+		toCopy := available
+		if toCopy > missing {
+			toCopy = missing
 		}
 
-		start := self.blockSize
-		end := start + available
+		copy(self.blockData[self.blockSize:self.blockSize+toCopy], buffer[i:i+toCopy])
 
-		copy(self.blockData[start:end], buffer[i:available])
+		i += toCopy
+		self.blockSize += toCopy
 
-		i += available
-		self.blockSize += available
-
-		if available < missing {
+		if toCopy < missing {
 			break
 		}
 
