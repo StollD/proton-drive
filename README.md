@@ -17,4 +17,4 @@ you have stored, and that the consuming app **MUST** be run as a daemon.
 #### Thanks
 
  * henrybear327 for publishing https://github.com/henrybear327/Proton-API-Bridge
- * Proton for publishing https://github.com/ProtonMail/go-proton-api 
+ * Proton for publishing https://github.com/ProtonMail/go-proton-api
