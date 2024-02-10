@@ -8,11 +8,12 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/henrybear327/go-proton-api"
 	"hash"
 	"io"
 	"time"
+
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/henrybear327/go-proton-api"
 )
 
 const (

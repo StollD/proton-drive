@@ -3,12 +3,13 @@ package drive
 import (
 	"context"
 	"errors"
+	pathlib "path"
+
 	"github.com/barweiss/go-tuple"
-	"github.com/deckarep/golang-set/v2"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/henrybear327/go-proton-api"
 	"github.com/relvacode/iso8601"
 	"golang.org/x/time/rate"
-	pathlib "path"
 )
 
 var (

@@ -1,11 +1,12 @@
 package drive
 
 import (
+	pathlib "path"
+	"time"
+
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/henrybear327/go-proton-api"
-	pathlib "path"
-	"time"
 )
 
 type Link struct {

@@ -2,6 +2,7 @@ package drive
 
 import (
 	"encoding/base64"
+
 	"github.com/ProtonMail/gopenpgp/v2/crypto"
 	"github.com/ProtonMail/gopenpgp/v2/helper"
 )

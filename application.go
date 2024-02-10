@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
+
 	"github.com/henrybear327/go-proton-api"
 )
 

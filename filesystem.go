@@ -3,10 +3,11 @@ package drive
 import (
 	"context"
 	"errors"
-	"github.com/ProtonMail/gopenpgp/v2/crypto"
-	"github.com/henrybear327/go-proton-api"
 	"mime"
 	pathlib "path"
+
+	"github.com/ProtonMail/gopenpgp/v2/crypto"
+	"github.com/henrybear327/go-proton-api"
 )
 
 var (
