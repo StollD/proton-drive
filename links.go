@@ -300,7 +300,25 @@ func (self *Links) LinkFromPath(path string) *Link {
 	return nil
 }
 
-func (self *Links) OnCreate(event proton.LinkEvent) error {
+func (self *Links) OnEvent(event proton.LinkEvent) error {
+	old := self.LinkFromID(event.Link.LinkID)
+
+	if event.Link.State == proton.LinkStateActive {
+		if old == nil {
+			return self.onCreate(event)
+		} else {
+			return self.onUpdate(event)
+		}
+	} else {
+		if old != nil {
+			self.onDelete(event)
+		}
+	}
+
+	return nil
+}
+
+func (self *Links) onCreate(event proton.LinkEvent) error {
 	if event.Link.State != proton.LinkStateActive {
 		return nil
 	}
@@ -320,15 +338,8 @@ func (self *Links) OnCreate(event proton.LinkEvent) error {
 	return nil
 }
 
-func (self *Links) OnUpdate(event proton.LinkEvent) error {
+func (self *Links) onUpdate(event proton.LinkEvent) error {
 	old := self.LinkFromID(event.Link.LinkID)
-
-	if old == nil && event.Link.State == proton.LinkStateActive {
-		return self.OnCreate(event)
-	} else if event.Link.State != proton.LinkStateActive {
-		self.OnDelete(event)
-		return nil
-	}
 
 	oldParent := old.Parent()
 	newParent := self.LinkFromID(event.Link.ParentLinkID)
@@ -345,11 +356,10 @@ func (self *Links) OnUpdate(event proton.LinkEvent) error {
 	newParent.children.Add(old)
 
 	self.getLinkMaps()
-
 	return nil
 }
 
-func (self *Links) OnDelete(event proton.LinkEvent) {
+func (self *Links) onDelete(event proton.LinkEvent) {
 	old := self.LinkFromID(event.Link.LinkID)
 
 	if old == nil {

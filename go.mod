@@ -22,14 +22,11 @@ require (
 	github.com/bradenaw/juniper v0.15.3 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
 	github.com/cronokirby/saferith v0.33.0 // indirect
-	github.com/emersion/go-imap v1.2.1 // indirect
 	github.com/emersion/go-message v0.18.0 // indirect
 	github.com/emersion/go-textwrapper v0.0.0-20200911093747-65d896831594 // indirect
 	github.com/emersion/go-vcard v0.0.0-20230815062825-8fda7d206ec9 // indirect
 	github.com/go-resty/resty/v2 v2.11.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
-	github.com/mattn/go-sqlite3 v1.14.22 // indirect
-	github.com/pierrec/lz4/v4 v4.1.21 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	golang.org/x/crypto v0.19.0 // indirect

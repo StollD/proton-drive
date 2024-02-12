@@ -95,18 +95,7 @@ func (self *EventLoop) getNextEvent(ctx context.Context) error {
 
 func (self *EventLoop) handleEvents(events []proton.LinkEvent) error {
 	for _, event := range events {
-		var err error = nil
-
-		switch event.EventType {
-		case proton.LinkEventCreate:
-			err = self.links.OnCreate(event)
-		case proton.LinkEventUpdate:
-			err = self.links.OnUpdate(event)
-		case proton.LinkEventUpdateMetadata:
-			err = self.links.OnUpdate(event)
-		default:
-			continue
-		}
+		err := self.links.OnEvent(event)
 
 		if err != nil {
 			return err
