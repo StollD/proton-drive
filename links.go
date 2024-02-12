@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	pathlib "path"
+	"sync"
 
 	"github.com/barweiss/go-tuple"
 	mapset "github.com/deckarep/golang-set/v2"
@@ -39,9 +40,12 @@ type Links struct {
 	linkByPath map[string]*Link
 
 	limiter *rate.Limiter
+	lock    sync.RWMutex
 }
 
 func (self *Links) Init(ctx context.Context) error {
+	self.lock = sync.RWMutex{}
+
 	err := self.getVolume(ctx)
 	if err != nil {
 		return err
@@ -283,6 +287,9 @@ func (self *Links) Root() *Link {
 }
 
 func (self *Links) LinkFromID(linkID string) *Link {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
 	if val, ok := self.linkByID[linkID]; ok {
 		return val
 	}
@@ -291,6 +298,9 @@ func (self *Links) LinkFromID(linkID string) *Link {
 }
 
 func (self *Links) LinkFromPath(path string) *Link {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
 	path = pathlib.Clean(path)
 
 	if val, ok := self.linkByPath[path]; ok {
@@ -325,6 +335,9 @@ func (self *Links) onCreate(event proton.LinkEvent) error {
 
 	parent := self.LinkFromID(event.Link.ParentLinkID)
 
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
 	link, err := self.getLink(event.Link, parent)
 	if err != nil {
 		return err
@@ -343,6 +356,9 @@ func (self *Links) onUpdate(event proton.LinkEvent) error {
 
 	oldParent := old.Parent()
 	newParent := self.LinkFromID(event.Link.ParentLinkID)
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
 	link, err := self.getLink(event.Link, newParent)
 	if err != nil {
@@ -365,6 +381,9 @@ func (self *Links) onDelete(event proton.LinkEvent) {
 	if old == nil {
 		return
 	}
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
 
 	delete(self.linkByID, old.ID())
 	delete(self.linkByPath, old.Path())
