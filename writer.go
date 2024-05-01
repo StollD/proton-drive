@@ -134,6 +134,36 @@ func (self *FileWriter) uploadCurrentBlock() error {
 		return err
 	}
 
+	verification, err := self.client.GetVerificationData(
+		self.ctx,
+		self.parent.Share().ID(),
+		self.linkID,
+		self.revisionID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	verificationCode, err := base64.StdEncoding.DecodeString(verification.VerificationCode)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Check if content is decryptable using the verification key
+
+	for i := 0; i < len(verificationCode); i++ {
+		value := byte(0)
+
+		if i < len(encrypted) {
+			value = encrypted[i]
+		}
+
+		verificationCode[i] = verificationCode[i] ^ value
+	}
+
+	verificationToken := base64.StdEncoding.EncodeToString(verificationCode)
+
 	blockHash := sha256.New()
 	blockHash.Write(encrypted)
 
@@ -152,6 +182,9 @@ func (self *FileWriter) uploadCurrentBlock() error {
 				Size:         int64(len(encrypted)),
 				Hash:         checkSumEnc,
 				EncSignature: signatureArm,
+				Verifier: proton.BlockVerification{
+					Token: verificationToken,
+				},
 			},
 		},
 	}
